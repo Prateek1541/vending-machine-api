@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.config import settings
 from app.models import Slot
@@ -27,10 +27,22 @@ def get_slot_by_id(db: Session, slot_id: str) -> Slot | None:
     return db.query(Slot).filter(Slot.id == slot_id).first()
 
 
+# def delete_slot(db: Session, slot_id: str) -> None:
+#     slot = get_slot_by_id(db, slot_id)
+#     if not slot:
+#         raise ValueError("slot_not_found")
+#     db.delete(slot)
+#     db.commit()
+#after bug fix
 def delete_slot(db: Session, slot_id: str) -> None:
     slot = get_slot_by_id(db, slot_id)
     if not slot:
         raise ValueError("slot_not_found")
+    
+    # FIX: Prevent deletion if the slot has items
+    if slot.current_item_count > 0:
+        raise ValueError("slot_not_empty")
+        
     db.delete(slot)
     db.commit()
 
