@@ -47,17 +47,42 @@ def delete_slot(db: Session, slot_id: str) -> None:
     db.commit()
 
 
+# def get_full_view(db: Session) -> list[SlotFullView]:
+#     slots = db.query(Slot).all()
+#     result = []
+#     for slot in slots:
+#         # slot.items loaded per slot (N+1)
+#         items = [
+#             SlotFullViewItem(
+#                 id=item.id,
+#                 name=item.name,
+#                 price=item.price,
+#                 quantity=item.quantity,
+#             )
+#             for item in slot.items
+#         ]
+#         result.append(
+#             SlotFullView(
+#                 id=slot.id,
+#                 code=slot.code,
+#                 capacity=slot.capacity,
+#                 items=items,
+#             )
+#         )
+#     return result
+# after bug fix
 def get_full_view(db: Session) -> list[SlotFullView]:
-    slots = db.query(Slot).all()
+    # FIX: Use joinedload to fetch slots and items in a single query (solves N+1)
+    slots = db.query(Slot).options(joinedload(Slot.items)).all()
+    
     result = []
     for slot in slots:
-        # slot.items loaded per slot (N+1)
         items = [
             SlotFullViewItem(
                 id=item.id,
                 name=item.name,
                 price=item.price,
-                quantity=item.quantity,
+                quantity=item.quantity,  # Make sure Item model has quantity, or we'll find another bug!
             )
             for item in slot.items
         ]
